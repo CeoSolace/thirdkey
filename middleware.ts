@@ -4,9 +4,17 @@ import { jwtVerify } from 'jose';
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  // 1. Check site state via PUBLIC API (safe fetch)
+  // 1. Determine absolute base URL for server-side fetch
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    process.env.VERCEL_URL ||
+    req.nextUrl.origin ||
+    'https://www.thirdkey.org'; // fallback
+
+  // 2. Check site state via PUBLIC API
   try {
-    const siteStateRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/public/site-state`, {
+    const siteStateRes = await fetch(`${baseUrl}/api/public/site-state`, {
       cache: 'no-store',
     });
 
@@ -24,10 +32,10 @@ export async function middleware(req: NextRequest) {
     }
   } catch (err) {
     console.error('Error fetching site state:', err);
-    // Don't block the request if site-state check fails
+    // Don’t block the request if the fetch fails
   }
 
-  // 2. Auth guard: JWT only (no DB)
+  // 3. Auth guard: JWT only (no DB)
   const protectedRoutes = ['/artist', '/admin', '/account', '/premium'];
   const isProtected = protectedRoutes.some((route) => path.startsWith(route));
 
@@ -46,7 +54,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 3. Streaming guard (for audio routes)
+  // 4. Streaming guard (for audio routes)
   if (path.endsWith('.mp3') || path.startsWith('/api/stream')) {
     const token = req.cookies.get('session')?.value;
     if (!token) {
@@ -62,11 +70,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 4. Default pass-through
+  // Default: allow through
   return NextResponse.next();
 }
 
-// Match all except static and public assets
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:jpg|jpeg|png|gif|webp|mp3|wav|ogg)$).*)',
