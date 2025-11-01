@@ -1,4 +1,4 @@
-// 📁 `lib/adtonos.ts`
+// Use relative path since it's in same folder
 import { cloudinary } from './cloudinary';
 
 export const adtonosConfig = {
@@ -8,15 +8,10 @@ export const adtonosConfig = {
   streamId: process.env.ADTONOS_STREAM_ID,
 };
 
-// Simulate ad insertion (in real app, call AdTonos API)
 export async function getAdUrl() {
   if (!adtonosConfig.enabled) return null;
 
-  // In production, fetch from AdTonos
-  // For demo, return a placeholder audio
-  const result = await cloudinary.uploader.upload(
-    'https://example.com/ad.mp3', // replace with real ad
-    { resource_type: 'video', folder: 'thirdkey/ads' }
-  );
-  return result.secure_url;
+  // In real app, call AdTonos API
+  // For now, return null or placeholder
+  return null;
 }
