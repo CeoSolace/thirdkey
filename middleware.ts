@@ -1,54 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConnect } from './lib/dbConnect';
-import { SiteState } from './models/SiteState';
-import { auth } from './lib/auth';
+import { jwtVerify } from 'jose';
 
 export async function middleware(req: NextRequest) {
-  await dbConnect();
-
-  // 1. Check site state
-  const siteStateDoc = await SiteState.findOne();
-  const siteState = siteStateDoc?.state || 'open';
   const path = req.nextUrl.pathname;
 
-  if (siteState === 'maintenance' && !path.startsWith('/maintenance')) {
+  // 1. Check site state via PUBLIC API (no DB)
+  const siteStateRes = await fetch(`${req.nextUrl.origin}/api/public/site-state`);
+  const siteState = await siteStateRes.json();
+
+  if (siteState.state === 'maintenance' && !path.startsWith('/maintenance')) {
     return NextResponse.redirect(new URL('/maintenance', req.url));
   }
-
-  if (siteState === 'closed' && !path.startsWith('/closed')) {
+  if (siteState.state === 'closed' && !path.startsWith('/closed')) {
     return NextResponse.redirect(new URL('/closed', req.url));
   }
 
-  // 2. Auth guard for protected routes
+  // 2. Auth guard: JWT only (no DB)
   const protectedRoutes = ['/artist', '/admin', '/account', '/premium'];
   const isProtected = protectedRoutes.some(route => path.startsWith(route));
 
   if (isProtected) {
-    const session = await auth();
-    if (!session) {
+    const token = req.cookies.get('session')?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL('/auth/login', req.url));
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
+    } catch {
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
   }
 
-  // 3. Streaming guard (for /api/stream or audio routes — assumed)
-  if (path.startsWith('/api/stream') || path.endsWith('.mp3')) {
-    const session = await auth();
-    if (!session) {
+  // 3. Streaming guard (for audio routes)
+  if (path.endsWith('.mp3') || path.startsWith('/api/stream')) {
+    const token = req.cookies.get('session')?.value;
+    if (!token) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const user = await (await import('./models/User')).User.findOne({ email: session.user.email });
-    if (!user || user.isBanned) {
-      return new NextResponse('Forbidden', { status: 403 });
-    }
-
-    const now = new Date();
-    const canStream = user.isEmailVerified ||
-      (user.tempVerified && user.tempVerifiedUntil > now) ||
-      user.isPremium;
-
-    if (!canStream) {
-      return new NextResponse('Verification required', { status: 403 });
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
+    } catch {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
   }
 
