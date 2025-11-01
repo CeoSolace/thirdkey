@@ -1,9 +1,10 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'ThirdKey',
   description: 'Music streaming for artists and listeners',
 };
@@ -15,7 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} bg-background text-foreground`}>
+        {children}
+      </body>
     </html>
   );
 }
