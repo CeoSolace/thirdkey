@@ -45,7 +45,7 @@ function LoginFormComponent() {
       });
 
       if (res.ok) {
-        router.push('/dashboard');
+        router.push('/dashboard'); // ✅ Redirect to /dashboard on success
       } else {
         const err = await res.json();
         setError(err.error || 'Login failed');
