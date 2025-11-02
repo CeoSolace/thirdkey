@@ -40,7 +40,6 @@ export default function DashboardPage() {
     ? new Date(user.tempVerifiedUntil).toLocaleDateString()
     : null;
 
-  // Owner sees admin dashboard
   const showAdmin = user.role === 'admin' || user.role === 'owner';
 
   return (
@@ -67,7 +66,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Common Actions */}
         <div className="border rounded p-4">
           <h3 className="font-semibold mb-2">Actions</h3>
           <ul className="space-y-2">
@@ -88,7 +86,6 @@ export default function DashboardPage() {
           </ul>
         </div>
 
-        {/* Artist Tools */}
         {(user.role === 'artist' || showAdmin) && (
           <div className="border rounded p-4">
             <h3 className="font-semibold mb-2">Artist Tools</h3>
@@ -99,7 +96,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Admin/Owner Panel */}
         {showAdmin && (
           <div className="border rounded p-4">
             <h3 className="font-semibold mb-2">Admin Controls</h3>
