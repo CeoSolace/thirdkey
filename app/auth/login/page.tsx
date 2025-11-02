@@ -1,10 +1,10 @@
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -13,7 +13,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginFormComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const verified = searchParams.get('verified');
@@ -105,5 +105,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center mt-10 text-white">Loading...</div>}>
+      <LoginFormComponent />
+    </Suspense>
   );
 }
