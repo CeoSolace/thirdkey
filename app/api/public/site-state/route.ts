@@ -2,20 +2,22 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { SiteState } from '@/models/SiteState';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await dbConnect();
-    const siteState = await SiteState.findOne();
-
+    const doc = await SiteState.findOne();
     return NextResponse.json({
-      state: siteState?.state || 'open',
-      message: siteState?.message || '',
+      state: doc?.state || 'open',
+      message: doc?.message || '',
     });
   } catch (error) {
-    console.error('Error fetching site state:', error);
-    return NextResponse.json(
-      { state: 'open', message: 'Failed to fetch site state.' },
-      { status: 500 }
-    );
+    console.error('SiteState fetch error:', error);
+    // Always return a safe default — never 500/502
+    return NextResponse.json({
+      state: 'open',
+      message: '',
+    });
   }
 }
